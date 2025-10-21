@@ -1,7 +1,10 @@
+use std::sync::Arc;
+
 use apalis::prelude::*;
 use apalis_cron::CronContext;
 use log::debug;
 use serde::{Deserialize, Serialize};
+use surrealdb::{Surreal, engine::local::Db};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum ApplicationJob {
@@ -13,20 +16,23 @@ pub enum ApplicationJob {
 #[derive(Debug, Default)]
 pub struct ScheduledJob;
 
-pub async fn perform_application_job(job: ApplicationJob) -> Result<(), Error> {
+pub async fn perform_application_job(
+    job: ApplicationJob,
+    _db: Data<Arc<Surreal<Db>>>,
+) -> Result<(), Error> {
     debug!("Processing job: {:?}", job);
 
     match job {
         ApplicationJob::FileIndexing(path) => {
-            debug!("File indexing job for path: {}", path);
+            debug!("File indexing job for path: {} (db available)", path);
             Ok(())
         }
         ApplicationJob::CleanupTasks => {
-            debug!("Running cleanup tasks");
+            debug!("Running cleanup tasks (db available)");
             Ok(())
         }
         ApplicationJob::DirectoryScan(path) => {
-            debug!("Directory scan job for path: {}", path);
+            debug!("Directory scan job for path: {} (db available)", path);
             Ok(())
         }
     }
@@ -35,7 +41,11 @@ pub async fn perform_application_job(job: ApplicationJob) -> Result<(), Error> {
 pub async fn perform_scheduled_job(
     _job: ScheduledJob,
     ctx: CronContext<chrono_tz::Tz>,
+    _db: Data<Arc<Surreal<Db>>>,
 ) -> Result<(), Error> {
-    debug!("Running scheduled job at {:#?}", ctx.get_timestamp());
+    debug!(
+        "Running scheduled job at {:#?} (db available)",
+        ctx.get_timestamp()
+    );
     Ok(())
 }

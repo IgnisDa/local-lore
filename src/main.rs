@@ -1,4 +1,4 @@
-use std::{env, fs::create_dir_all, str::FromStr, time::Duration};
+use std::{env, fs::create_dir_all, str::FromStr, sync::Arc, time::Duration};
 
 use anyhow::{Result, anyhow};
 use apalis::{
@@ -22,12 +22,12 @@ mod jobs;
 
 #[derive(Clone)]
 struct LocalLoreServer {
-    db: Surreal<Db>,
+    db: Arc<Surreal<Db>>,
 }
 
 #[server(name = "Local Lore", version = "0.1.0")]
 impl LocalLoreServer {
-    fn new(db: Surreal<Db>) -> Self {
+    fn new(db: Arc<Surreal<Db>>) -> Self {
         Self { db }
     }
 }
@@ -49,6 +49,8 @@ async fn main() -> Result<()> {
     let db = setup_database().await?;
     run_migrations(&db).await?;
 
+    let db = Arc::new(db);
+
     let application_job_storage = MemoryStorage::new();
 
     let tz: chrono_tz::Tz = env::var("TZ")
@@ -63,6 +65,7 @@ async fn main() -> Result<()> {
                     .enable_tracing()
                     .catch_panic()
                     .rate_limit(10, Duration::new(5, 0))
+                    .data(db.clone())
                     .backend(application_job_storage)
                     .build_fn(jobs::perform_application_job),
             )
@@ -70,6 +73,7 @@ async fn main() -> Result<()> {
                 WorkerBuilder::new("perform_scheduled_job")
                     .enable_tracing()
                     .catch_panic()
+                    .data(db.clone())
                     .backend(CronStream::new_with_timezone(
                         Schedule::from_str("0 0 * * * *").unwrap(),
                         tz,
@@ -84,7 +88,7 @@ async fn main() -> Result<()> {
     debug!("Server initialization complete, starting stdio server and job monitor");
 
     let mcp_server = async {
-        LocalLoreServer::new(db)
+        LocalLoreServer::new(db.clone())
             .run_stdio()
             .await
             .map_err(|e| anyhow!("{}", e))
