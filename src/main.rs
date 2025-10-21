@@ -15,7 +15,7 @@ use surrealdb::{
     engine::local::{Db, RocksDb},
 };
 use surrealdb_migrations::MigrationRunner;
-use tokio::try_join;
+use tokio::sync::broadcast;
 use turbomcp::prelude::*;
 
 use crate::context::ProjectContext;
@@ -80,46 +80,95 @@ async fn main() -> Result<()> {
         .unwrap_or_else(|_| chrono_tz::Etc::GMT);
     debug!("Timezone: {}", tz);
 
-    let monitor = async {
-        Monitor::new()
-            .register(
-                WorkerBuilder::new("perform_application_job")
-                    .enable_tracing()
-                    .catch_panic()
-                    .rate_limit(10, Duration::new(5, 0))
-                    .data(project_context.clone())
-                    .backend(application_job_storage)
-                    .build_fn(jobs::perform_application_job),
-            )
-            .register(
-                WorkerBuilder::new("perform_scheduled_job")
-                    .enable_tracing()
-                    .catch_panic()
-                    .data(project_context.clone())
-                    .backend(CronStream::new_with_timezone(
-                        Schedule::from_str("0 0 * * * *").unwrap(),
-                        tz,
-                    ))
-                    .build_fn(jobs::perform_scheduled_job),
-            )
-            .run()
-            .await
-            .map_err(|e| anyhow!("{}", e))
+    let (shutdown_tx, _) = broadcast::channel::<()>(1);
+
+    let monitor_handle = {
+        let shutdown_rx = shutdown_tx.subscribe();
+        let ctx = project_context.clone();
+        tokio::spawn(async move {
+            let monitor_task = Monitor::new()
+                .register(
+                    WorkerBuilder::new("perform_application_job")
+                        .enable_tracing()
+                        .catch_panic()
+                        .rate_limit(10, Duration::new(5, 0))
+                        .data(ctx.clone())
+                        .backend(application_job_storage)
+                        .build_fn(jobs::perform_application_job),
+                )
+                .register(
+                    WorkerBuilder::new("perform_scheduled_job")
+                        .enable_tracing()
+                        .catch_panic()
+                        .data(ctx)
+                        .backend(CronStream::new_with_timezone(
+                            Schedule::from_str("0 0 * * * *").unwrap(),
+                            tz,
+                        ))
+                        .build_fn(jobs::perform_scheduled_job),
+                )
+                .run();
+
+            tokio::pin!(monitor_task);
+
+            let mut shutdown_rx = shutdown_rx;
+
+            tokio::select! {
+                result = &mut monitor_task => {
+                    result.map_err(|e| anyhow!("{}", e))
+                }
+                _ = shutdown_rx.recv() => {
+                    debug!("Monitor received shutdown signal");
+                    Ok(())
+                }
+            }
+        })
     };
 
     debug!("Server initialization complete, starting stdio server and job monitor");
 
-    let mcp_server = async {
-        LocalLoreServer::new(project_context.clone())
-            .run_stdio()
-            .await
-            .map_err(|e| anyhow!("{}", e))
+    let mcp_task = LocalLoreServer::new(project_context).run_stdio();
+    tokio::pin!(mcp_task);
+
+    let mut shutdown_rx = shutdown_tx.subscribe();
+
+    enum ExitReason {
+        Shutdown,
+        McpCompleted(Result<()>),
+        MonitorCompleted(Result<()>),
+    }
+
+    let exit_reason = tokio::select! {
+        result = &mut mcp_task => {
+            debug!("MCP server completed");
+            ExitReason::McpCompleted(result.map_err(|e| anyhow!("{}", e)))
+        }
+        monitor_result = monitor_handle => {
+            debug!("Monitor task completed");
+            let result = monitor_result
+                .map_err(|e| anyhow!("Monitor task panicked: {}", e))
+                .and_then(|res| res);
+            ExitReason::MonitorCompleted(result)
+        }
+        _ = shutdown_rx.recv() => {
+            debug!("Received shutdown signal");
+            ExitReason::Shutdown
+        }
+        _ = tokio::signal::ctrl_c() => {
+            debug!("Received Ctrl+C, initiating graceful shutdown");
+            let _ = shutdown_tx.send(());
+            ExitReason::Shutdown
+        }
     };
 
-    let result = try_join!(monitor, mcp_server);
-
+    debug!("Flushing traces");
     fastrace::flush();
-    result.map(|_| ())
+
+    match exit_reason {
+        ExitReason::Shutdown => Ok(()),
+        ExitReason::McpCompleted(result) => result,
+        ExitReason::MonitorCompleted(result) => result,
+    }
 }
 
 async fn setup_database() -> Result<Surreal<Db>> {
