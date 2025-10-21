@@ -18,18 +18,21 @@ use surrealdb_migrations::MigrationRunner;
 use tokio::try_join;
 use turbomcp::prelude::*;
 
+mod context;
 mod jobs;
 mod scan_directory;
 
+use context::ProjectContext;
+
 #[derive(Clone)]
 struct LocalLoreServer {
-    db: Arc<Surreal<Db>>,
+    ctx: Arc<ProjectContext>,
 }
 
 #[server(name = "Local Lore", version = "0.1.0")]
 impl LocalLoreServer {
-    fn new(db: Arc<Surreal<Db>>) -> Self {
-        Self { db }
+    fn new(ctx: Arc<ProjectContext>) -> Self {
+        Self { ctx }
     }
 }
 
@@ -51,6 +54,7 @@ async fn main() -> Result<()> {
     run_migrations(&db).await?;
 
     let db = Arc::new(db);
+    let project_context = Arc::new(ProjectContext::new(db));
 
     let mut application_job_storage = MemoryStorage::new();
 
@@ -82,7 +86,7 @@ async fn main() -> Result<()> {
                     .enable_tracing()
                     .catch_panic()
                     .rate_limit(10, Duration::new(5, 0))
-                    .data(db.clone())
+                    .data(project_context.clone())
                     .backend(application_job_storage)
                     .build_fn(jobs::perform_application_job),
             )
@@ -90,7 +94,7 @@ async fn main() -> Result<()> {
                 WorkerBuilder::new("perform_scheduled_job")
                     .enable_tracing()
                     .catch_panic()
-                    .data(db.clone())
+                    .data(project_context.clone())
                     .backend(CronStream::new_with_timezone(
                         Schedule::from_str("0 0 * * * *").unwrap(),
                         tz,
@@ -105,7 +109,7 @@ async fn main() -> Result<()> {
     debug!("Server initialization complete, starting stdio server and job monitor");
 
     let mcp_server = async {
-        LocalLoreServer::new(db.clone())
+        LocalLoreServer::new(project_context.clone())
             .run_stdio()
             .await
             .map_err(|e| anyhow!("{}", e))

@@ -2,9 +2,10 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use log::debug;
-use surrealdb::{Surreal, engine::local::Db};
 
-pub async fn scan_directory(path: &str, _db: &Arc<Surreal<Db>>) -> Result<()> {
+use crate::context::ProjectContext;
+
+pub async fn scan_directory(path: &str, _ctx: &Arc<ProjectContext>) -> Result<()> {
     debug!("Scanning directory: {}", path);
     Ok(())
 }

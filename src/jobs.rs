@@ -4,8 +4,8 @@ use apalis::prelude::*;
 use apalis_cron::CronContext;
 use log::debug;
 use serde::{Deserialize, Serialize};
-use surrealdb::{Surreal, engine::local::Db};
 
+use crate::context::ProjectContext;
 use crate::scan_directory::scan_directory;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -20,21 +20,21 @@ pub struct ScheduledJob;
 
 pub async fn perform_application_job(
     job: ApplicationJob,
-    db: Data<Arc<Surreal<Db>>>,
+    ctx: Data<Arc<ProjectContext>>,
 ) -> Result<(), Error> {
     debug!("Processing job: {:?}", job);
 
     match job {
         ApplicationJob::FileIndexing(path) => {
-            debug!("File indexing job for path: {} (db available)", path);
+            debug!("File indexing job for path: {} (context available)", path);
             Ok(())
         }
         ApplicationJob::CleanupTasks => {
-            debug!("Running cleanup tasks (db available)");
+            debug!("Running cleanup tasks (context available)");
             Ok(())
         }
         ApplicationJob::DirectoryScan(path) => {
-            scan_directory(&path, &db)
+            scan_directory(&path, &ctx)
                 .await
                 .map_err(|e| Error::Failed(Arc::new(e.into())))?;
             Ok(())
@@ -44,12 +44,12 @@ pub async fn perform_application_job(
 
 pub async fn perform_scheduled_job(
     _job: ScheduledJob,
-    ctx: CronContext<chrono_tz::Tz>,
-    _db: Data<Arc<Surreal<Db>>>,
+    cron_ctx: CronContext<chrono_tz::Tz>,
+    _ctx: Data<Arc<ProjectContext>>,
 ) -> Result<(), Error> {
     debug!(
-        "Running scheduled job at {:#?} (db available)",
-        ctx.get_timestamp()
+        "Running scheduled job at {:#?} (context available)",
+        cron_ctx.get_timestamp()
     );
     Ok(())
 }
