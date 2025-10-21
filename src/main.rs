@@ -17,7 +17,7 @@ struct LocalLoreServer {
     db: Surreal<Db>,
 }
 
-#[server(name = "local-lore", version = "0.1.0")]
+#[server(name = "Local Lore", version = "0.1.0")]
 impl LocalLoreServer {
     fn new(db: Surreal<Db>) -> Self {
         Self { db }
@@ -52,7 +52,6 @@ async fn main() -> Result<()> {
     result
 }
 
-#[trace]
 async fn setup_database() -> Result<Surreal<Db>> {
     debug!("Setting up database");
     let data_dir = dirs::data_dir()
@@ -71,7 +70,6 @@ async fn setup_database() -> Result<Surreal<Db>> {
     Ok(db)
 }
 
-#[trace]
 async fn run_migrations<C>(db: &Surreal<C>) -> Result<()>
 where
     C: Connection,
