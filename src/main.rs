@@ -8,6 +8,7 @@ use apalis::{
 use apalis_cron::{CronStream, Schedule};
 use fastrace::collector::{Config, ConsoleReporter};
 use fastrace::prelude::*;
+use include_dir::{Dir, include_dir};
 use log::debug;
 use logforth::append;
 use surrealdb::{
@@ -24,6 +25,8 @@ mod context;
 mod jobs;
 mod models;
 mod scan_directory;
+
+const DB_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/db");
 
 #[derive(Clone)]
 struct LocalLoreServer {
@@ -145,6 +148,7 @@ where
 {
     debug!("Running database migrations");
     MigrationRunner::new(db)
+        .load_files(&DB_DIR)
         .up()
         .await
         .map_err(|e| anyhow!("{}", e))?;
