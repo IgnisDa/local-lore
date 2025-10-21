@@ -30,7 +30,7 @@ pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()>
 
     debug!("Processing {} chunks of dependencies", chunks.len());
 
-    let mut total_upserted = 0;
+    let mut total_upsert = 0;
     for chunk in chunks {
         let mut upsert_tasks = Vec::new();
         for dependency in chunk {
@@ -45,12 +45,12 @@ pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()>
             upsert_tasks.push(task);
         }
         let results = try_join_all(upsert_tasks).await?;
-        total_upserted += results.iter().sum::<usize>();
+        total_upsert += results.iter().sum::<usize>();
     }
 
     debug!(
-        "Scan completed for: {}, upserted {} dependencies",
-        path, total_upserted
+        "Scan completed for: {} and upsert {} dependencies",
+        path, total_upsert
     );
     Ok(())
 }
