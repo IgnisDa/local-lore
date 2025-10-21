@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs::read_to_string};
 
 use anyhow::Result;
 use log::debug;
@@ -11,7 +11,7 @@ pub async fn collect_dependencies(path: &str) -> Result<Vec<Dependency>> {
 
     let package_lock_path = format!("{}/package-lock.json", path);
 
-    let dependencies_result = match parse_dependencies(&package_lock_path) {
+    let dependencies_result = match parse_dependencies(&read_to_string(package_lock_path)?) {
         Ok(deps) => deps,
         Err(e) => {
             debug!("Failed to parse package-lock.json for {}: {}", path, e);
