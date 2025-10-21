@@ -1,10 +1,13 @@
-use chrono::{DateTime, Utc};
+use core::str;
+
 use serde::{Deserialize, Serialize};
+use strum::Display;
 use surrealdb::RecordId;
 
 pub static DEPENDENCY_TABLE: &str = "dependency";
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Display)]
+#[strum(serialize_all = "lowercase")]
 pub enum ProjectLanguage {
     Rust,
     JavaScript,
@@ -20,13 +23,9 @@ pub struct InsertDependency {
 
 impl InsertDependency {
     pub fn new(name: String, version: String, language: ProjectLanguage) -> Self {
-        let language_str = match language {
-            ProjectLanguage::Rust => "rust",
-            ProjectLanguage::JavaScript => "javascript",
-        };
         let id = (
             DEPENDENCY_TABLE,
-            format!("{}:{}:{}", language_str, name, version),
+            format!("{}:{}:{}", language.to_string(), name, version),
         );
         Self {
             name,
