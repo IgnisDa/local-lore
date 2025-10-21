@@ -116,6 +116,6 @@ where
     MigrationRunner::new(db)
         .up()
         .await
-        .map_err(|e| anyhow::anyhow!("{}", e))?;
+        .map_err(|e| anyhow!("{}", e))?;
     Ok(())
 }
