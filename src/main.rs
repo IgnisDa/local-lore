@@ -6,8 +6,10 @@ use apalis::{
     prelude::{MemoryStorage, MessageQueue, Monitor, WorkerBuilder, WorkerFactoryFn},
 };
 use apalis_cron::{CronStream, Schedule};
-use fastrace::collector::{Config, ConsoleReporter};
-use fastrace::prelude::*;
+use fastrace::{
+    collector::{Config, ConsoleReporter},
+    prelude::*,
+};
 use include_dir::{Dir, include_dir};
 use log::debug;
 use logforth::append;
