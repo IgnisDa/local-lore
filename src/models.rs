@@ -16,13 +16,11 @@ pub struct Dependency {
     pub name: String,
     pub version: String,
     pub language: ProjectLanguage,
-    pub first_seen_at: DateTime<Utc>,
     pub last_indexed_at: Option<DateTime<Utc>>,
 }
 
 impl Dependency {
     pub fn new(name: String, version: String, language: ProjectLanguage) -> Self {
-        let now = Utc::now();
         let language_str = match language {
             ProjectLanguage::Rust => "rust",
             ProjectLanguage::JavaScript => "javascript",
@@ -36,7 +34,6 @@ impl Dependency {
             version,
             language,
             id: id.into(),
-            first_seen_at: now,
             last_indexed_at: None,
         }
     }
