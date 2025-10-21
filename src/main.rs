@@ -22,6 +22,7 @@ use crate::context::ProjectContext;
 
 mod context;
 mod jobs;
+mod models;
 mod scan_directory;
 
 #[derive(Clone)]
