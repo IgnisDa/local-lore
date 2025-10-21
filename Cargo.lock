@@ -2778,6 +2778,7 @@ dependencies = [
  "chrono-tz",
  "dirs",
  "fastrace",
+ "futures",
  "log",
  "logforth",
  "serde",
