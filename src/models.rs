@@ -7,6 +7,7 @@ pub static DEPENDENCY_TABLE: &str = "dependency";
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ProjectLanguage {
     Rust,
+    JavaScript,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -24,6 +25,7 @@ impl Dependency {
         let now = Utc::now();
         let language_str = match language {
             ProjectLanguage::Rust => "rust",
+            ProjectLanguage::JavaScript => "javascript",
         };
         let id = (
             DEPENDENCY_TABLE,

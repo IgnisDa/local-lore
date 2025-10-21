@@ -10,13 +10,20 @@ use crate::{
 };
 
 pub mod cargo_lock;
+pub mod package_lock;
 
 static CHUNK_SIZE: usize = 10;
 
 pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()> {
-    let dependencies = cargo_lock::collect_dependencies(path).await?;
+    let mut all_dependencies = Vec::new();
 
-    let chunks: Vec<Vec<Dependency>> = dependencies
+    let rust_deps = cargo_lock::collect_dependencies(path).await?;
+    all_dependencies.extend(rust_deps);
+
+    let js_deps = package_lock::collect_dependencies(path).await?;
+    all_dependencies.extend(js_deps);
+
+    let chunks: Vec<Vec<Dependency>> = all_dependencies
         .chunks(CHUNK_SIZE)
         .map(|chunk| chunk.to_vec())
         .collect();
