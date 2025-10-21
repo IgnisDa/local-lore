@@ -12,7 +12,7 @@ use crate::{
 pub mod cargo_lock;
 pub mod package_lock;
 
-static CHUNK_SIZE: usize = 10;
+static CHUNK_SIZE: usize = 20;
 
 pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()> {
     let mut all_dependencies = Vec::new();
@@ -30,25 +30,27 @@ pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()>
 
     debug!("Processing {} chunks of dependencies", chunks.len());
 
-    let mut insert_tasks = Vec::new();
+    let mut total_upserted = 0;
     for chunk in chunks {
-        let ctx = ctx.clone();
-        let task = async move {
-            ctx.db
-                .insert(DEPENDENCY_TABLE)
-                .content(chunk)
-                .await
-                .map(|deps: Vec<Dependency>| deps.len())
-        };
-        insert_tasks.push(task);
+        let mut upsert_tasks = Vec::new();
+        for dependency in chunk {
+            let ctx = ctx.clone();
+            let task = async move {
+                ctx.db
+                    .upsert(DEPENDENCY_TABLE)
+                    .content(dependency)
+                    .await
+                    .map(|e: Vec<Dependency>| e.len())
+            };
+            upsert_tasks.push(task);
+        }
+        let results = try_join_all(upsert_tasks).await?;
+        total_upserted += results.iter().sum::<usize>();
     }
 
-    let results = try_join_all(insert_tasks).await?;
-    let total_inserted: usize = results.iter().sum();
-
     debug!(
-        "Scan completed for: {}, inserted {} dependencies",
-        path, total_inserted
+        "Scan completed for: {}, upserted {} dependencies",
+        path, total_upserted
     );
     Ok(())
 }
