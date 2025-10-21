@@ -1,12 +1,21 @@
-use surrealdb::{Connection, Surreal, engine::local::RocksDb};
+use surrealdb::{
+    Connection, Surreal,
+    engine::local::{Db, RocksDb},
+};
 use surrealdb_migrations::MigrationRunner;
 use turbomcp::prelude::*;
 
 #[derive(Clone)]
-struct LocalLoreServer;
+struct LocalLoreServer {
+    db: Surreal<Db>,
+}
 
 #[server(name = "local-lore", version = "0.1.0")]
 impl LocalLoreServer {
+    fn new(db: Surreal<Db>) -> Self {
+        Self { db }
+    }
+
     #[tool("Say hello to someone")]
     async fn hello(&self, name: String) -> McpResult<String> {
         Ok(format!("Hello, {name}! Welcome to Local Lore."))
@@ -92,7 +101,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     run_migrations(&db).await?;
 
-    LocalLoreServer.run_stdio().await?;
+    LocalLoreServer::new(db).run_stdio().await?;
     Ok(())
 }
 
