@@ -18,11 +18,11 @@ use surrealdb_migrations::MigrationRunner;
 use tokio::try_join;
 use turbomcp::prelude::*;
 
+use crate::context::ProjectContext;
+
 mod context;
 mod jobs;
 mod scan_directory;
-
-use context::ProjectContext;
 
 #[derive(Clone)]
 struct LocalLoreServer {
