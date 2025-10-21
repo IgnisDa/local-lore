@@ -10,8 +10,6 @@ use crate::scan_directory::scan_directory;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum ApplicationJob {
-    CleanupTasks,
-    FileIndexing(String),
     DirectoryScan(String),
 }
 
@@ -25,14 +23,6 @@ pub async fn perform_application_job(
     debug!("Processing job: {:?}", job);
 
     match job {
-        ApplicationJob::FileIndexing(path) => {
-            debug!("File indexing job for path: {} (context available)", path);
-            Ok(())
-        }
-        ApplicationJob::CleanupTasks => {
-            debug!("Running cleanup tasks (context available)");
-            Ok(())
-        }
         ApplicationJob::DirectoryScan(path) => {
             scan_directory(&path, &ctx)
                 .await
