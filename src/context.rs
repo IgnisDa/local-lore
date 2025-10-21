@@ -1,13 +1,11 @@
-use std::sync::Arc;
-
 use surrealdb::{Surreal, engine::local::Db};
 
 pub struct ProjectContext {
-    pub db: Arc<Surreal<Db>>,
+    pub db: Surreal<Db>,
 }
 
 impl ProjectContext {
-    pub fn new(db: Arc<Surreal<Db>>) -> Self {
+    pub fn new(db: Surreal<Db>) -> Self {
         Self { db }
     }
 }

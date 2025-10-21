@@ -54,7 +54,6 @@ async fn main() -> Result<()> {
     let db = setup_database().await?;
     run_migrations(&db).await?;
 
-    let db = Arc::new(db);
     let project_context = Arc::new(ProjectContext::new(db));
 
     let mut application_job_storage = MemoryStorage::new();
