@@ -14,9 +14,9 @@ pub struct Dependency {
     pub id: RecordId,
     pub name: String,
     pub version: String,
-    pub indexed_at: DateTime<Utc>,
     pub language: ProjectLanguage,
     pub first_seen_at: DateTime<Utc>,
+    pub last_indexed_at: Option<DateTime<Utc>>,
 }
 
 impl Dependency {
@@ -34,8 +34,8 @@ impl Dependency {
             version,
             language,
             id: id.into(),
-            indexed_at: now,
             first_seen_at: now,
+            last_indexed_at: None,
         }
     }
 }
