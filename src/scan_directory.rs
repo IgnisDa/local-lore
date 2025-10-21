@@ -6,7 +6,7 @@ use log::debug;
 
 use crate::{
     context::ProjectContext,
-    models::{DEPENDENCY_TABLE, Dependency},
+    models::{DEPENDENCY_TABLE, Dependency, ProjectLanguage},
 };
 
 pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()> {
@@ -35,7 +35,7 @@ pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()>
                 let key = (name.clone(), version.clone());
                 dependencies_map
                     .entry(key)
-                    .or_insert_with(|| Dependency::new(name, version));
+                    .or_insert_with(|| Dependency::new(name, version, ProjectLanguage::Rust));
             }
         }
     }
