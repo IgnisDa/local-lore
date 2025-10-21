@@ -1,3 +1,4 @@
+use anyhow::{Result, anyhow};
 use surrealdb::{
     Connection, Surreal,
     engine::local::{Db, RocksDb},
@@ -95,20 +96,26 @@ impl LocalLoreServer {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     let db = Surreal::new::<RocksDb>("./tmp/storage").await?;
     db.use_ns("main").use_db("main").await?;
 
     run_migrations(&db).await?;
 
-    LocalLoreServer::new(db).run_stdio().await?;
+    LocalLoreServer::new(db)
+        .run_stdio()
+        .await
+        .map_err(|e| anyhow!("{}", e))?;
     Ok(())
 }
 
-async fn run_migrations<C>(db: &Surreal<C>) -> Result<(), Box<dyn std::error::Error>>
+async fn run_migrations<C>(db: &Surreal<C>) -> Result<()>
 where
     C: Connection,
 {
-    MigrationRunner::new(db).up().await?;
+    MigrationRunner::new(db)
+        .up()
+        .await
+        .map_err(|e| anyhow::anyhow!("{}", e))?;
     Ok(())
 }
