@@ -12,10 +12,10 @@ pub enum ProjectLanguage {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Dependency {
     pub id: RecordId,
-    pub language: ProjectLanguage,
     pub name: String,
     pub version: String,
     pub indexed_at: DateTime<Utc>,
+    pub language: ProjectLanguage,
     pub first_seen_at: DateTime<Utc>,
 }
 
@@ -25,15 +25,15 @@ impl Dependency {
         let language_str = match language {
             ProjectLanguage::Rust => "rust",
         };
+        let id = (
+            DEPENDENCY_TABLE,
+            format!("{}:{}:{}", language_str, name, version),
+        );
         Self {
-            id: (
-                DEPENDENCY_TABLE,
-                format!("{}:{}:{}", language_str, name, version),
-            )
-                .into(),
-            language,
             name,
             version,
+            language,
+            id: id.into(),
             indexed_at: now,
             first_seen_at: now,
         }
