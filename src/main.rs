@@ -1,3 +1,5 @@
+use std::fs::create_dir_all;
+
 use anyhow::{Result, anyhow};
 use surrealdb::{
     Connection, Surreal,
@@ -97,7 +99,16 @@ impl LocalLoreServer {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let db = Surreal::new::<RocksDb>("./tmp/storage").await?;
+    let data_dir = dirs::data_dir()
+        .ok_or_else(|| anyhow!("Failed to determine data directory"))?
+        .join("local-lore");
+    create_dir_all(&data_dir)?;
+    let storage_path = data_dir.join("storage");
+    create_dir_all(&storage_path)?;
+    let storage_path = storage_path
+        .to_str()
+        .ok_or_else(|| anyhow!("Storage path includes invalid unicode characters"))?;
+    let db = Surreal::new::<RocksDb>(storage_path).await?;
     db.use_ns("main").use_db("main").await?;
 
     run_migrations(&db).await?;
