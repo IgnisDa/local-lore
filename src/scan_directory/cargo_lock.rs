@@ -33,11 +33,6 @@ pub async fn collect_dependencies(path: &str) -> Result<Vec<Dependency>> {
     debug!("Found {} workspace members", workspace_members.len());
 
     for package in workspace_members {
-        debug!(
-            "Processing dependencies for package: {} v{}",
-            package.name, package.version
-        );
-
         for dep in &package.dependencies {
             if matches!(dep.kind, DependencyKind::Build) {
                 continue;
