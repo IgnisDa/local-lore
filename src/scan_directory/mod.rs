@@ -53,5 +53,16 @@ pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()>
         path, total_upsert
     );
 
+    let mut dependencies_to_index_response = ctx
+        .db
+        .query(format!(
+            "SELECT * FROM {DEPENDENCY_TABLE} WHERE last_indexed_at = NONE"
+        ))
+        .await?;
+
+    let dependencies_to_index: Vec<InsertDependency> = dependencies_to_index_response.take(0)?;
+
+    dbg!(dependencies_to_index);
+
     Ok(())
 }
