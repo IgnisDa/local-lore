@@ -10,8 +10,15 @@ pub async fn collect_dependencies(path: &str) -> Result<Vec<InsertDependency>> {
     debug!("Scanning directory for package-lock.json: {}", path);
 
     let package_lock_path = format!("{}/package-lock.json", path);
+    let contents = match read_to_string(&package_lock_path) {
+        Ok(c) => c,
+        Err(_e) => {
+            debug!("Could not read package-lock.json at {}", package_lock_path);
+            return Ok(Vec::new());
+        }
+    };
 
-    let dependencies_result = match parse_dependencies(&read_to_string(package_lock_path)?) {
+    let dependencies_result = match parse_dependencies(&contents) {
         Ok(deps) => deps,
         Err(e) => {
             debug!("Failed to parse package-lock.json for {}: {}", path, e);
