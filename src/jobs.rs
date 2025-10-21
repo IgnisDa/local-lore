@@ -6,6 +6,8 @@ use log::debug;
 use serde::{Deserialize, Serialize};
 use surrealdb::{Surreal, engine::local::Db};
 
+use crate::scan_directory::scan_directory;
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum ApplicationJob {
     CleanupTasks,
@@ -18,7 +20,7 @@ pub struct ScheduledJob;
 
 pub async fn perform_application_job(
     job: ApplicationJob,
-    _db: Data<Arc<Surreal<Db>>>,
+    db: Data<Arc<Surreal<Db>>>,
 ) -> Result<(), Error> {
     debug!("Processing job: {:?}", job);
 
@@ -32,7 +34,9 @@ pub async fn perform_application_job(
             Ok(())
         }
         ApplicationJob::DirectoryScan(path) => {
-            debug!("Directory scan job for path: {} (db available)", path);
+            scan_directory(&path, &db)
+                .await
+                .map_err(|e| Error::Failed(Arc::new(e.into())))?;
             Ok(())
         }
     }

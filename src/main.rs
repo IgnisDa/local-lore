@@ -3,7 +3,7 @@ use std::{env, fs::create_dir_all, str::FromStr, sync::Arc, time::Duration};
 use anyhow::{Result, anyhow};
 use apalis::{
     layers::WorkerBuilderExt,
-    prelude::{MemoryStorage, Monitor, WorkerBuilder, WorkerFactoryFn},
+    prelude::{MemoryStorage, MessageQueue, Monitor, WorkerBuilder, WorkerFactoryFn},
 };
 use apalis_cron::{CronStream, Schedule};
 use fastrace::collector::{Config, ConsoleReporter};
@@ -19,6 +19,7 @@ use tokio::try_join;
 use turbomcp::prelude::*;
 
 mod jobs;
+mod scan_directory;
 
 #[derive(Clone)]
 struct LocalLoreServer {
@@ -51,7 +52,23 @@ async fn main() -> Result<()> {
 
     let db = Arc::new(db);
 
-    let application_job_storage = MemoryStorage::new();
+    let mut application_job_storage = MemoryStorage::new();
+
+    let current_dir = std::env::current_dir()?;
+    let current_dir_str = current_dir
+        .to_str()
+        .ok_or_else(|| anyhow!("Current directory path contains invalid unicode"))?;
+
+    debug!(
+        "Deploying initial directory scan job for: {}",
+        current_dir_str
+    );
+    application_job_storage
+        .enqueue(jobs::ApplicationJob::DirectoryScan(
+            current_dir_str.to_string(),
+        ))
+        .await
+        .map_err(|_| anyhow!("Failed to enqueue initial scan job"))?;
 
     let tz: chrono_tz::Tz = env::var("TZ")
         .map(|s| s.parse().unwrap())
