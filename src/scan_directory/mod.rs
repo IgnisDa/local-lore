@@ -9,12 +9,12 @@ use crate::{
     models::{DEPENDENCY_TABLE, Dependency},
 };
 
-pub mod rust;
+pub mod cargo_lock;
 
 static CHUNK_SIZE: usize = 10;
 
 pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()> {
-    let dependencies = rust::scan_directory(path).await?;
+    let dependencies = cargo_lock::collect_dependencies(path).await?;
 
     let chunks: Vec<Vec<Dependency>> = dependencies
         .chunks(CHUNK_SIZE)

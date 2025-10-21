@@ -6,7 +6,7 @@ use log::debug;
 
 use crate::models::{Dependency, ProjectLanguage};
 
-pub async fn scan_directory(path: &str) -> Result<Vec<Dependency>> {
+pub async fn collect_dependencies(path: &str) -> Result<Vec<Dependency>> {
     debug!("Scanning directory: {}", path);
 
     let metadata = match MetadataCommand::new()
