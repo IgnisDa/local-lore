@@ -11,15 +11,14 @@ pub enum ProjectLanguage {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Dependency {
+pub struct InsertDependency {
     pub id: RecordId,
     pub name: String,
     pub version: String,
     pub language: ProjectLanguage,
-    pub last_indexed_at: Option<DateTime<Utc>>,
 }
 
-impl Dependency {
+impl InsertDependency {
     pub fn new(name: String, version: String, language: ProjectLanguage) -> Self {
         let language_str = match language {
             ProjectLanguage::Rust => "rust",
@@ -34,7 +33,6 @@ impl Dependency {
             version,
             language,
             id: id.into(),
-            last_indexed_at: None,
         }
     }
 }

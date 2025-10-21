@@ -4,9 +4,9 @@ use anyhow::Result;
 use log::debug;
 use package_lock_json_parser::parse_dependencies;
 
-use crate::models::{Dependency, ProjectLanguage};
+use crate::models::{InsertDependency, ProjectLanguage};
 
-pub async fn collect_dependencies(path: &str) -> Result<Vec<Dependency>> {
+pub async fn collect_dependencies(path: &str) -> Result<Vec<InsertDependency>> {
     debug!("Scanning directory for package-lock.json: {}", path);
 
     let package_lock_path = format!("{}/package-lock.json", path);
@@ -24,7 +24,7 @@ pub async fn collect_dependencies(path: &str) -> Result<Vec<Dependency>> {
         dependencies_result.len()
     );
 
-    let mut dependencies_map: HashMap<(String, String), Dependency> = HashMap::new();
+    let mut dependencies_map: HashMap<(String, String), InsertDependency> = HashMap::new();
 
     for dep in dependencies_result {
         let name = dep.name;
@@ -32,10 +32,10 @@ pub async fn collect_dependencies(path: &str) -> Result<Vec<Dependency>> {
         let key = (name.clone(), version.clone());
         dependencies_map
             .entry(key)
-            .or_insert_with(|| Dependency::new(name, version, ProjectLanguage::JavaScript));
+            .or_insert_with(|| InsertDependency::new(name, version, ProjectLanguage::JavaScript));
     }
 
-    let dependencies: Vec<Dependency> = dependencies_map.into_values().collect();
+    let dependencies: Vec<InsertDependency> = dependencies_map.into_values().collect();
 
     debug!(
         "Found {} unique JavaScript dependencies",

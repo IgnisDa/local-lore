@@ -6,7 +6,7 @@ use log::debug;
 
 use crate::{
     context::ProjectContext,
-    models::{DEPENDENCY_TABLE, Dependency},
+    models::{DEPENDENCY_TABLE, InsertDependency},
 };
 
 pub mod cargo_lock;
@@ -23,7 +23,7 @@ pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()>
     let js_deps = package_lock::collect_dependencies(path).await?;
     all_dependencies.extend(js_deps);
 
-    let chunks: Vec<Vec<Dependency>> = all_dependencies
+    let chunks: Vec<Vec<InsertDependency>> = all_dependencies
         .chunks(CHUNK_SIZE)
         .map(|chunk| chunk.to_vec())
         .collect();
@@ -40,7 +40,7 @@ pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()>
                     .upsert(DEPENDENCY_TABLE)
                     .content(dependency)
                     .await
-                    .map(|e: Vec<Dependency>| e.len())
+                    .map(|e: Vec<InsertDependency>| e.len())
             };
             upsert_tasks.push(task);
         }
@@ -52,5 +52,6 @@ pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()>
         "Scan completed for: {} and upsert {} dependencies",
         path, total_upsert
     );
+
     Ok(())
 }
