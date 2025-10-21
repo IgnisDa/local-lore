@@ -1,30 +1,6 @@
-use serde::{Deserialize, Serialize};
-use surrealdb::{RecordId, Surreal, engine::local::RocksDb};
+use surrealdb::{Connection, Surreal, engine::local::RocksDb};
+use surrealdb_migrations::MigrationRunner;
 use turbomcp::prelude::*;
-
-#[derive(Debug, Serialize)]
-struct Name<'a> {
-    first: &'a str,
-    last: &'a str,
-}
-
-#[derive(Debug, Serialize)]
-struct Person<'a> {
-    title: &'a str,
-    name: Name<'a>,
-    marketing: bool,
-}
-
-#[derive(Debug, Serialize)]
-struct Responsibility {
-    marketing: bool,
-}
-
-#[derive(Debug, Deserialize)]
-struct Record {
-    #[allow(dead_code)]
-    id: RecordId,
-}
 
 #[derive(Clone)]
 struct LocalLoreServer;
@@ -112,37 +88,18 @@ impl LocalLoreServer {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db = Surreal::new::<RocksDb>("./tmp/storage").await?;
+    db.use_ns("main").use_db("main").await?;
 
-    db.use_ns("test").use_db("test").await?;
-
-    let created: Option<Record> = db
-        .create("person")
-        .content(Person {
-            title: "Founder & CEO",
-            name: Name {
-                first: "Tobie",
-                last: "Morgan Hitchcock",
-            },
-            marketing: true,
-        })
-        .await?;
-    dbg!(created);
-
-    let updated: Option<Record> = db
-        .update(("person", "jaime"))
-        .merge(Responsibility { marketing: true })
-        .await?;
-    dbg!(updated);
-
-    let people: Vec<Record> = db.select("person").await?;
-    dbg!(people);
-
-    let groups = db
-        .query("SELECT marketing, count() FROM type::table($table) GROUP BY marketing")
-        .bind(("table", "person"))
-        .await?;
-    dbg!(groups);
+    run_migrations(&db).await?;
 
     LocalLoreServer.run_stdio().await?;
+    Ok(())
+}
+
+async fn run_migrations<C>(db: &Surreal<C>) -> Result<(), Box<dyn std::error::Error>>
+where
+    C: Connection,
+{
+    MigrationRunner::new(db).up().await?;
     Ok(())
 }
