@@ -5,6 +5,9 @@ edition = "2024"
 
 [dependencies]
 anyhow = "=1.0.100"
+apalis = { version = "=0.7.3", features = ["catch-panic", "limit", "retry"] }
+apalis-cron = "=0.7.3"
+chrono-tz = "=0.10.4"
 dirs = "=6.0.0"
 fastrace = { version = "=0.7.14", features = ["enable"] }
 log = "=0.4.28"

@@ -1,6 +1,11 @@
-use std::fs::create_dir_all;
+use std::{env, fs::create_dir_all, str::FromStr, time::Duration};
 
 use anyhow::{Result, anyhow};
+use apalis::{
+    layers::WorkerBuilderExt,
+    prelude::{MemoryStorage, Monitor, WorkerBuilder, WorkerFactoryFn},
+};
+use apalis_cron::{CronStream, Schedule};
 use fastrace::collector::{Config, ConsoleReporter};
 use fastrace::prelude::*;
 use log::debug;
@@ -10,7 +15,10 @@ use surrealdb::{
     engine::local::{Db, RocksDb},
 };
 use surrealdb_migrations::MigrationRunner;
+use tokio::try_join;
 use turbomcp::prelude::*;
+
+mod jobs;
 
 #[derive(Clone)]
 struct LocalLoreServer {
@@ -41,15 +49,51 @@ async fn main() -> Result<()> {
     let db = setup_database().await?;
     run_migrations(&db).await?;
 
-    debug!("Server initialization complete, starting stdio server");
+    let application_job_storage = MemoryStorage::new();
 
-    let result = LocalLoreServer::new(db)
-        .run_stdio()
-        .await
-        .map_err(|e| anyhow!("{}", e));
+    let tz: chrono_tz::Tz = env::var("TZ")
+        .map(|s| s.parse().unwrap())
+        .unwrap_or_else(|_| chrono_tz::Etc::GMT);
+    debug!("Timezone: {}", tz);
+
+    let monitor = async {
+        Monitor::new()
+            .register(
+                WorkerBuilder::new("perform_application_job")
+                    .enable_tracing()
+                    .catch_panic()
+                    .rate_limit(10, Duration::new(5, 0))
+                    .backend(application_job_storage)
+                    .build_fn(jobs::perform_application_job),
+            )
+            .register(
+                WorkerBuilder::new("perform_scheduled_job")
+                    .enable_tracing()
+                    .catch_panic()
+                    .backend(CronStream::new_with_timezone(
+                        Schedule::from_str("0 0 * * * *").unwrap(),
+                        tz,
+                    ))
+                    .build_fn(jobs::perform_scheduled_job),
+            )
+            .run()
+            .await
+            .map_err(|e| anyhow!("{}", e))
+    };
+
+    debug!("Server initialization complete, starting stdio server and job monitor");
+
+    let mcp_server = async {
+        LocalLoreServer::new(db)
+            .run_stdio()
+            .await
+            .map_err(|e| anyhow!("{}", e))
+    };
+
+    let result = try_join!(monitor, mcp_server);
 
     fastrace::flush();
-    result
+    result.map(|_| ())
 }
 
 async fn setup_database() -> Result<Surreal<Db>> {
