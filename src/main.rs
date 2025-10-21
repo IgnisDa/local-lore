@@ -36,7 +36,7 @@ impl LocalLoreServer {
 async fn main() -> Result<()> {
     fastrace::set_reporter(ConsoleReporter, Config::default());
 
-    logforth::builder()
+    logforth::starter_log::builder()
         .dispatch(|d| d.append(append::Stderr::default()))
         .dispatch(|d| d.append(append::FastraceEvent::default()))
         .apply();
