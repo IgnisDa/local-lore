@@ -5,7 +5,7 @@ use apalis_cron::CronContext;
 use log::debug;
 use serde::{Deserialize, Serialize};
 
-use crate::{collectors::scan_directory, context::ProjectContext};
+use crate::{collectors::gather_project_dependencies, context::ProjectContext};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum ApplicationJob {
@@ -23,7 +23,7 @@ pub async fn perform_application_job(
 
     match job {
         ApplicationJob::DirectoryScan(path) => {
-            scan_directory(&path, &ctx)
+            gather_project_dependencies(&path, &ctx)
                 .await
                 .map_err(|e| Error::Failed(Arc::new(e.into())))?;
             Ok(())

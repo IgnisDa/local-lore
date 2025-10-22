@@ -30,7 +30,7 @@ impl CollectorDependency {
     }
 }
 
-pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()> {
+pub async fn gather_project_dependencies(path: &str, ctx: &Arc<ProjectContext>) -> Result<()> {
     let mut all_dependencies = Vec::new();
 
     let rust_deps = cargo_lock::collect_dependencies(path).await?;
