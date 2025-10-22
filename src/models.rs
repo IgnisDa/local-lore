@@ -1,5 +1,3 @@
-use core::str;
-
 use serde::{Deserialize, Serialize};
 use strum::Display;
 use surrealdb::RecordId;
