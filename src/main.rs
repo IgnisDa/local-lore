@@ -12,20 +12,19 @@ use fastrace::{
 };
 use log::debug;
 use logforth::append;
-use surrealdb::{
-    Connection, Surreal,
-    engine::local::{Db, RocksDb},
-};
+use sea_orm::{Database, DatabaseConnection};
+use sea_orm_migration::MigratorTrait;
 use tokio::try_join;
 use turbomcp::prelude::*;
 
-use crate::{context::ProjectContext, migrations::ALL_MIGRATIONS};
+use crate::{context::ProjectContext, migrator::Migrator};
 
 mod collectors;
 mod context;
+mod entities;
 mod jobs;
 mod mcp;
-mod migrations;
+mod migrator;
 mod models;
 
 #[derive(Clone)]
@@ -124,32 +123,26 @@ async fn main() -> Result<()> {
     result.map(|_| ())
 }
 
-async fn setup_database() -> Result<Surreal<Db>> {
+async fn setup_database() -> Result<DatabaseConnection> {
     debug!("Setting up database");
     let data_dir = dirs::data_dir()
         .ok_or_else(|| anyhow!("Failed to determine data directory"))?
         .join("local-lore");
     create_dir_all(&data_dir)?;
-    let storage_path = data_dir.join("storage");
-    create_dir_all(&storage_path)?;
-    let storage_path = storage_path
+    let db_path = data_dir.join("local-lore.db");
+    let db_path_str = db_path
         .to_str()
-        .ok_or_else(|| anyhow!("Storage path includes invalid unicode characters"))?;
-    debug!("Connecting to database at: {}", storage_path);
-    let db = Surreal::new::<RocksDb>(storage_path).await?;
-    db.use_ns("main").use_db("main").await?;
+        .ok_or_else(|| anyhow!("Database path includes invalid unicode characters"))?;
+    let connection_string = format!("sqlite://{}?mode=rwc", db_path_str);
+    debug!("Connecting to database at: {}", connection_string);
+    let db = Database::connect(&connection_string).await?;
     debug!("Database connection established");
     Ok(db)
 }
 
-async fn run_migrations<C>(db: &Surreal<C>) -> Result<()>
-where
-    C: Connection,
-{
+async fn run_migrations(db: &DatabaseConnection) -> Result<()> {
     debug!("Running database migrations");
-    for migration in ALL_MIGRATIONS {
-        db.query(*migration).await?;
-    }
+    Migrator::up(db, None).await?;
     debug!("Database migrations completed");
     Ok(())
 }

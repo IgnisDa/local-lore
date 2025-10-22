@@ -1,11 +1,11 @@
-use surrealdb::{Surreal, engine::local::Db};
+use sea_orm::DatabaseConnection;
 
 pub struct ProjectContext {
-    pub db: Surreal<Db>,
+    pub db: DatabaseConnection,
 }
 
 impl ProjectContext {
-    pub fn new(db: Surreal<Db>) -> Self {
+    pub fn new(db: DatabaseConnection) -> Self {
         Self { db }
     }
 }

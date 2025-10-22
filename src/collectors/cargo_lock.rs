@@ -4,9 +4,9 @@ use anyhow::Result;
 use cargo_metadata::{DependencyKind, MetadataCommand};
 use log::debug;
 
-use crate::models::{InsertDependency, ProjectLanguage};
+use crate::{collectors::CollectorDependency, models::ProjectLanguage};
 
-pub async fn collect_dependencies(path: &str) -> Result<Vec<InsertDependency>> {
+pub async fn collect_dependencies(path: &str) -> Result<Vec<CollectorDependency>> {
     debug!("Scanning directory: {}", path);
 
     let metadata = match MetadataCommand::new()
@@ -22,7 +22,7 @@ pub async fn collect_dependencies(path: &str) -> Result<Vec<InsertDependency>> {
 
     debug!("Found {} packages in workspace", metadata.packages.len());
 
-    let mut dependencies_map: HashMap<(String, String), InsertDependency> = HashMap::new();
+    let mut dependencies_map: HashMap<(String, String), CollectorDependency> = HashMap::new();
 
     let workspace_members: Vec<_> = metadata
         .workspace_members
@@ -42,14 +42,14 @@ pub async fn collect_dependencies(path: &str) -> Result<Vec<InsertDependency>> {
                 let name = resolved_package.name.to_string();
                 let version = resolved_package.version.to_string();
                 let key = (name.clone(), version.clone());
-                dependencies_map
-                    .entry(key)
-                    .or_insert_with(|| InsertDependency::new(name, version, ProjectLanguage::Rust));
+                dependencies_map.entry(key).or_insert_with(|| {
+                    CollectorDependency::new(name, version, ProjectLanguage::Rust)
+                });
             }
         }
     }
 
-    let dependencies: Vec<InsertDependency> = dependencies_map.into_values().collect();
+    let dependencies: Vec<CollectorDependency> = dependencies_map.into_values().collect();
 
     debug!("Found {} unique dependencies", dependencies.len());
 

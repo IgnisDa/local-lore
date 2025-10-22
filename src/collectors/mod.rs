@@ -1,18 +1,35 @@
 use std::sync::Arc;
 
 use anyhow::Result;
-use futures::future::try_join_all;
 use log::debug;
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+use uuid::Uuid;
 
 use crate::{
     context::ProjectContext,
-    models::{DEPENDENCY_TABLE, InsertDependency},
+    entities::{dependency, prelude::Dependency},
+    models::ProjectLanguage,
 };
 
 pub mod cargo_lock;
 pub mod package_lock;
 
-static CHUNK_SIZE: usize = 20;
+#[derive(Debug, Clone)]
+pub struct CollectorDependency {
+    pub name: String,
+    pub version: String,
+    pub language: ProjectLanguage,
+}
+
+impl CollectorDependency {
+    pub fn new(name: String, version: String, language: ProjectLanguage) -> Self {
+        Self {
+            name,
+            version,
+            language,
+        }
+    }
+}
 
 pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()> {
     let mut all_dependencies = Vec::new();
@@ -23,46 +40,45 @@ pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()>
     let js_deps = package_lock::collect_dependencies(path).await?;
     all_dependencies.extend(js_deps);
 
-    let chunks: Vec<Vec<InsertDependency>> = all_dependencies
-        .chunks(CHUNK_SIZE)
-        .map(|chunk| chunk.to_vec())
-        .collect();
-
-    debug!("Processing {} chunks of dependencies", chunks.len());
+    debug!("Processing {} dependencies", all_dependencies.len());
 
     let mut total_upsert = 0;
-    for chunk in chunks {
-        let mut upsert_tasks = Vec::new();
-        for dependency in chunk {
-            let ctx = ctx.clone();
-            let task = async move {
-                ctx.db
-                    .upsert(DEPENDENCY_TABLE)
-                    .content(dependency)
-                    .await
-                    .map(|e: Vec<InsertDependency>| e.len())
+    for dep_input in all_dependencies {
+        let existing = Dependency::find()
+            .filter(dependency::Column::Name.eq(&dep_input.name))
+            .filter(dependency::Column::Version.eq(&dep_input.version))
+            .filter(dependency::Column::Language.eq(dep_input.language.clone()))
+            .one(&ctx.db)
+            .await?;
+
+        if existing.is_none() {
+            let new_dep = dependency::ActiveModel {
+                id: Set(Uuid::new_v4()),
+                name: Set(dep_input.name),
+                version: Set(dep_input.version),
+                language: Set(dep_input.language),
+                ..Default::default()
             };
-            upsert_tasks.push(task);
+            new_dep.insert(&ctx.db).await?;
+            total_upsert += 1;
         }
-        let results = try_join_all(upsert_tasks).await?;
-        total_upsert += results.iter().sum::<usize>();
     }
 
     debug!(
-        "Scan completed for: {} and upsert {} dependencies",
+        "Scan completed for: {} and inserted {} new dependencies",
         path, total_upsert
     );
 
-    let mut dependencies_to_index_response = ctx
-        .db
-        .query(format!(
-            "SELECT * FROM {DEPENDENCY_TABLE} WHERE last_indexed_at = NONE"
-        ))
+    let dependencies_to_index = Dependency::find()
+        .filter(dependency::Column::LastIndexedAt.is_null())
+        .all(&ctx.db)
         .await?;
 
-    let dependencies_to_index: Vec<InsertDependency> = dependencies_to_index_response.take(0)?;
-
-    dbg!(dependencies_to_index);
+    debug!(
+        "Found {} dependencies to index: {:#?}",
+        dependencies_to_index.len(),
+        dependencies_to_index
+    );
 
     Ok(())
 }

@@ -1,35 +1,14 @@
+use sea_orm::{DeriveActiveEnum, EnumIter};
+use sea_orm_migration::prelude::*;
 use serde::{Deserialize, Serialize};
-use strum::Display;
-use surrealdb::RecordId;
 
-pub static DEPENDENCY_TABLE: &str = "dependency";
-
-#[derive(Debug, Clone, Serialize, Deserialize, Display)]
-#[strum(serialize_all = "lowercase")]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize, EnumIter, DeriveActiveEnum)]
+#[sea_orm(
+    rs_type = "String",
+    rename_all = "snake_case",
+    db_type = "String(StringLen::None)"
+)]
 pub enum ProjectLanguage {
     Rust,
     JavaScript,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct InsertDependency {
-    pub id: RecordId,
-    pub name: String,
-    pub version: String,
-    pub language: ProjectLanguage,
-}
-
-impl InsertDependency {
-    pub fn new(name: String, version: String, language: ProjectLanguage) -> Self {
-        let id = (
-            DEPENDENCY_TABLE,
-            format!("{}:{}:{}", language.to_string(), name, version),
-        );
-        Self {
-            name,
-            version,
-            language,
-            id: id.into(),
-        }
-    }
 }
