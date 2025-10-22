@@ -70,7 +70,7 @@ async fn main() -> Result<()> {
         current_dir_str
     );
     application_job_storage
-        .enqueue(jobs::ApplicationJob::DirectoryScan(
+        .enqueue(jobs::ApplicationJob::GatherProjectDependencies(
             current_dir_str.to_string(),
         ))
         .await

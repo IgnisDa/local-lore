@@ -9,7 +9,7 @@ use crate::{collectors::gather_project_dependencies, context::LocalLoreContext};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum ApplicationJob {
-    DirectoryScan(String),
+    GatherProjectDependencies(String),
 }
 
 #[derive(Debug, Default)]
@@ -22,7 +22,7 @@ pub async fn perform_application_job(
     debug!("Processing job: {:?}", job);
 
     match job {
-        ApplicationJob::DirectoryScan(path) => {
+        ApplicationJob::GatherProjectDependencies(path) => {
             gather_project_dependencies(&path, &ctx)
                 .await
                 .map_err(|e| Error::Failed(Arc::new(e.into())))?;
