@@ -5,7 +5,7 @@ use apalis_cron::CronContext;
 use log::debug;
 use serde::{Deserialize, Serialize};
 
-use crate::{context::ProjectContext, scan_directory::scan_directory};
+use crate::{collectors::scan_directory, context::ProjectContext};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum ApplicationJob {

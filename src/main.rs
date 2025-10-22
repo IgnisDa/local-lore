@@ -23,10 +23,10 @@ use turbomcp::prelude::*;
 
 use crate::context::ProjectContext;
 
+mod collectors;
 mod context;
 mod jobs;
 mod models;
-mod scan_directory;
 
 const DB_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/db");
 
