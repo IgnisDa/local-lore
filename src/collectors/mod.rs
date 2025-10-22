@@ -3,7 +3,6 @@ use std::sync::Arc;
 use anyhow::Result;
 use log::debug;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
-use uuid::Uuid;
 
 use crate::{
     context::ProjectContext,
@@ -53,7 +52,6 @@ pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()>
 
         if existing.is_none() {
             let new_dep = dependency::ActiveModel {
-                id: Set(Uuid::new_v4()),
                 name: Set(dep_input.name),
                 version: Set(dep_input.version),
                 language: Set(dep_input.language),

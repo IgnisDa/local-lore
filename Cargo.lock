@@ -1694,7 +1694,6 @@ dependencies = [
  "serde_json",
  "tokio",
  "turbomcp",
- "uuid",
 ]
 
 [[package]]
@@ -2782,7 +2781,6 @@ dependencies = [
  "ordered-float",
  "sea-query-derive",
  "serde_json",
- "uuid",
 ]
 
 [[package]]
@@ -2795,7 +2793,6 @@ dependencies = [
  "sea-query",
  "serde_json",
  "sqlx",
- "uuid",
 ]
 
 [[package]]
@@ -3160,7 +3157,6 @@ dependencies = [
  "tokio-stream",
  "tracing",
  "url",
- "uuid",
  "webpki-roots 0.26.11",
 ]
 
@@ -3242,7 +3238,6 @@ dependencies = [
  "stringprep",
  "thiserror 2.0.17",
  "tracing",
- "uuid",
  "whoami",
 ]
 
@@ -3281,7 +3276,6 @@ dependencies = [
  "stringprep",
  "thiserror 2.0.17",
  "tracing",
- "uuid",
  "whoami",
 ]
 
@@ -3308,7 +3302,6 @@ dependencies = [
  "thiserror 2.0.17",
  "tracing",
  "url",
- "uuid",
 ]
 
 [[package]]

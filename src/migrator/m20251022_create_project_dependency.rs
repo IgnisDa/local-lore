@@ -27,13 +27,14 @@ impl MigrationTrait for Migration {
                     .table(ProjectDependency::Table)
                     .col(
                         ColumnDef::new(ProjectDependency::Id)
-                            .uuid()
+                            .integer()
                             .not_null()
+                            .auto_increment()
                             .primary_key(),
                     )
                     .col(
                         ColumnDef::new(ProjectDependency::DependencyId)
-                            .uuid()
+                            .integer()
                             .not_null(),
                     )
                     .col(ColumnDef::new(ProjectDependency::Path).text().not_null())

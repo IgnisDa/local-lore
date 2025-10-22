@@ -25,8 +25,9 @@ impl MigrationTrait for Migration {
                     .table(Dependency::Table)
                     .col(
                         ColumnDef::new(Dependency::Id)
-                            .uuid()
+                            .integer()
                             .not_null()
+                            .auto_increment()
                             .primary_key(),
                     )
                     .col(ColumnDef::new(Dependency::Language).text().not_null())
