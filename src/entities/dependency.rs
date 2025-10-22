@@ -6,7 +6,7 @@ use crate::models::ProjectLanguage;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "dependency")]
 pub struct Model {
-    #[sea_orm(primary_key)]
+    #[sea_orm(primary_key, auto_increment = true)]
     pub id: i32,
     pub name: String,
     pub version: String,

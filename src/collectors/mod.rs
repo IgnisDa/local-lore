@@ -2,11 +2,15 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use log::debug;
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, Set, sea_query::OnConflict};
+use sea_orm::{EntityTrait, Set, sea_query::OnConflict};
 
 use crate::{
     context::ProjectContext,
-    entities::{dependency, prelude::Dependency},
+    entities::{
+        dependency,
+        prelude::{Dependency, ProjectDependency},
+        project_dependency,
+    },
     models::ProjectLanguage,
 };
 
@@ -43,13 +47,17 @@ pub async fn gather_project_dependencies(path: &str, ctx: &Arc<ProjectContext>) 
 
     let mut total_updated = 0;
     for dep_input in all_dependencies {
+        let dep_name = dep_input.name;
+        let dep_version = dep_input.version;
+        let dep_language = dep_input.language;
+
         let new_dep = dependency::ActiveModel {
-            name: Set(dep_input.name),
-            version: Set(dep_input.version),
-            language: Set(dep_input.language),
+            name: Set(dep_name.clone()),
+            version: Set(dep_version.clone()),
+            language: Set(dep_language.clone()),
             ..Default::default()
         };
-        Dependency::insert(new_dep)
+        let dependency_record = Dependency::insert(new_dep)
             .on_conflict(
                 OnConflict::columns([
                     dependency::Column::Name,
@@ -59,25 +67,32 @@ pub async fn gather_project_dependencies(path: &str, ctx: &Arc<ProjectContext>) 
                 .update_column(dependency::Column::LastSeenAt)
                 .to_owned(),
             )
+            .exec_with_returning(&ctx.db)
+            .await?;
+
+        let new_project_dep = project_dependency::ActiveModel {
+            path: Set(path.to_string()),
+            dependency_id: Set(dependency_record.id),
+            ..Default::default()
+        };
+        ProjectDependency::insert(new_project_dep)
+            .on_conflict(
+                OnConflict::columns([
+                    project_dependency::Column::Path,
+                    project_dependency::Column::DependencyId,
+                ])
+                .update_column(project_dependency::Column::LastSeenAt)
+                .to_owned(),
+            )
             .exec(&ctx.db)
             .await?;
+
         total_updated += 1;
     }
 
     debug!(
         "Scan completed for: {} and updated {} dependencies",
         path, total_updated
-    );
-
-    let dependencies_to_index = Dependency::find()
-        .filter(dependency::Column::LastIndexedAt.is_null())
-        .all(&ctx.db)
-        .await?;
-
-    debug!(
-        "Found {} dependencies to index: {:#?}",
-        dependencies_to_index.len(),
-        dependencies_to_index
     );
 
     Ok(())
