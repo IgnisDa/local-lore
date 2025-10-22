@@ -38,7 +38,7 @@ pub async fn collect_dependencies(path: &str) -> Result<Vec<CollectorDependency>
         let version = dep.version;
         let key = (name.clone(), version.clone());
         dependencies_map.entry(key).or_insert_with(|| {
-            CollectorDependency::new(name, version, ProjectLanguage::JavaScript)
+            CollectorDependency::new(name, version, ProjectLanguage::Javascript)
         });
     }
 

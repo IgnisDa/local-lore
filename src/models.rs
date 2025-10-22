@@ -10,5 +10,5 @@ use serde::{Deserialize, Serialize};
 )]
 pub enum ProjectLanguage {
     Rust,
-    JavaScript,
+    Javascript,
 }
