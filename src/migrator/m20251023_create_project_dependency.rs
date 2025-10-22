@@ -1,7 +1,7 @@
 use sea_orm_migration::prelude::*;
 
-use super::m20251021_create_dependency::Dependency;
 use super::m20251021_create_project::Project;
+use super::m20251022_create_dependency::Dependency;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
