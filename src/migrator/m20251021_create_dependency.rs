@@ -12,6 +12,7 @@ pub enum Dependency {
     Name,
     Version,
     Language,
+    LastSeenAt,
     FirstSeenAt,
     LastIndexedAt,
 }
@@ -35,6 +36,12 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Dependency::Version).text().not_null())
                     .col(
                         ColumnDef::new(Dependency::FirstSeenAt)
+                            .timestamp_with_time_zone()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .col(
+                        ColumnDef::new(Dependency::LastSeenAt)
                             .timestamp_with_time_zone()
                             .not_null()
                             .default(Expr::current_timestamp()),

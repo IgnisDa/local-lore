@@ -11,6 +11,7 @@ pub struct Model {
     pub name: String,
     pub version: String,
     pub language: ProjectLanguage,
+    pub last_seen_at: DateTimeUtc,
     pub first_seen_at: DateTimeUtc,
     pub last_indexed_at: Option<DateTimeUtc>,
 }

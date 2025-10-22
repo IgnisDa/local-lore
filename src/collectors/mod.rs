@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use log::debug;
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, Set, sea_query::OnConflict};
 
 use crate::{
     context::ProjectContext,
@@ -41,30 +41,32 @@ pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()>
 
     debug!("Processing {} dependencies", all_dependencies.len());
 
-    let mut total_upsert = 0;
+    let mut total_updated = 0;
     for dep_input in all_dependencies {
-        let existing = Dependency::find()
-            .filter(dependency::Column::Name.eq(&dep_input.name))
-            .filter(dependency::Column::Version.eq(&dep_input.version))
-            .filter(dependency::Column::Language.eq(dep_input.language.clone()))
-            .one(&ctx.db)
+        let new_dep = dependency::ActiveModel {
+            name: Set(dep_input.name),
+            version: Set(dep_input.version),
+            language: Set(dep_input.language),
+            ..Default::default()
+        };
+        Dependency::insert(new_dep)
+            .on_conflict(
+                OnConflict::columns([
+                    dependency::Column::Name,
+                    dependency::Column::Version,
+                    dependency::Column::Language,
+                ])
+                .update_column(dependency::Column::LastSeenAt)
+                .to_owned(),
+            )
+            .exec(&ctx.db)
             .await?;
-
-        if existing.is_none() {
-            let new_dep = dependency::ActiveModel {
-                name: Set(dep_input.name),
-                version: Set(dep_input.version),
-                language: Set(dep_input.language),
-                ..Default::default()
-            };
-            new_dep.insert(&ctx.db).await?;
-            total_upsert += 1;
-        }
+        total_updated += 1;
     }
 
     debug!(
-        "Scan completed for: {} and inserted {} new dependencies",
-        path, total_upsert
+        "Scan completed for: {} and updated {} dependencies",
+        path, total_updated
     );
 
     let dependencies_to_index = Dependency::find()
