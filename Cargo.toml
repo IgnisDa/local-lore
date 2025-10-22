@@ -26,6 +26,4 @@ strum = { version = "=0.27.2", features = ["derive"] }
 surrealdb = { version = "=2.3.10", features = ["kv-rocksdb"] }
 surrealdb-migrations = "=2.3.0"
 tokio = { version = "=1.48.0", features = ["full"] }
-turbomcp = "=2.0.2"
-turbomcp-protocol = "=2.0.2"
-turbomcp-server = "=2.0.2"
+turbomcp = "=2.0.3"

@@ -2790,8 +2790,6 @@ dependencies = [
  "surrealdb-migrations",
  "tokio",
  "turbomcp",
- "turbomcp-protocol",
- "turbomcp-server",
 ]
 
 [[package]]
@@ -5795,9 +5793,9 @@ dependencies = [
 
 [[package]]
 name = "turbomcp"
-version = "2.0.2"
+version = "2.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dcdb6759746d2164019b73adddb0d5c06b979e5c17219bebfa7374cbde7a4f2"
+checksum = "8f13d8cd147b00919ba5a27980dbdd07cc33e521d36807f6304292ce74ff98b0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -5825,9 +5823,9 @@ dependencies = [
 
 [[package]]
 name = "turbomcp-macros"
-version = "2.0.2"
+version = "2.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29f0ab61e81115f0303d4abf093b6a31243b279a8c6d2f737fec9b1ac519b918"
+checksum = "b0358150a2b7e11b0271fc2d18a53f3e1ec00a91f563d15c1beabf4ed33d803a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5840,9 +5838,9 @@ dependencies = [
 
 [[package]]
 name = "turbomcp-protocol"
-version = "2.0.2"
+version = "2.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31a2c95094ae43c03c3e3a0cadcb92a9507732ff428e33df97a568a0a6a4a0fb"
+checksum = "a9915b9cef8e829976feee8cf67721f69f360941b5dbd03c4aece1a6e0045de8"
 dependencies = [
  "ahash 0.8.12",
  "arc-swap",
@@ -5874,9 +5872,9 @@ dependencies = [
 
 [[package]]
 name = "turbomcp-server"
-version = "2.0.2"
+version = "2.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb9b8985ed04264d3e5dac7ed43e08abbc414522ffafc0b007c6fec63e74ddb9"
+checksum = "9be77e93bdf64a8d988be7f09525a67f3d10fc91e3672275bf86d6ecf10ee6da"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5906,9 +5904,9 @@ dependencies = [
 
 [[package]]
 name = "turbomcp-transport"
-version = "2.0.2"
+version = "2.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a256bbbbce804b15d60fb6f2aec6964be86eade6727add376753475f9f1b90e5"
+checksum = "f0b0e8fa40bd5dec58b0c2bbe08911d2cc6ecd093a11e59be49abe4b7b52cd19"
 dependencies = [
  "ahash 0.8.12",
  "anyhow",
