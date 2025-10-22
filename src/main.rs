@@ -10,26 +10,23 @@ use fastrace::{
     collector::{Config, ConsoleReporter},
     prelude::*,
 };
-use include_dir::{Dir, include_dir};
 use log::debug;
 use logforth::append;
 use surrealdb::{
     Connection, Surreal,
     engine::local::{Db, RocksDb},
 };
-use surrealdb_migrations::MigrationRunner;
 use tokio::try_join;
 use turbomcp::prelude::*;
 
-use crate::context::ProjectContext;
+use crate::{context::ProjectContext, migrations::ALL_MIGRATIONS};
 
 mod collectors;
 mod context;
 mod jobs;
 mod mcp;
+mod migrations;
 mod models;
-
-const DB_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/db");
 
 #[derive(Clone)]
 struct LocalLoreServer {
@@ -150,11 +147,9 @@ where
     C: Connection,
 {
     debug!("Running database migrations");
-    MigrationRunner::new(db)
-        .load_files(&DB_DIR)
-        .up()
-        .await
-        .map_err(|e| anyhow!("{}", e))?;
+    for migration in ALL_MIGRATIONS {
+        db.query(*migration).await?;
+    }
     debug!("Database migrations completed");
     Ok(())
 }
