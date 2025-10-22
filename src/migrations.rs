@@ -9,7 +9,7 @@ DEFINE FIELD OVERWRITE version ON dependency TYPE string;
 DEFINE FIELD OVERWRITE first_seen_at ON dependency TYPE datetime VALUE time::now() READONLY;
 DEFINE FIELD OVERWRITE last_indexed_at ON dependency TYPE option<string>;
 
-DEFINE INDEX OVERWRITE dependency_uq_idx_language_name_version ON dependency FIELDS language, name, version UNIQUE;
+DEFINE INDEX OVERWRITE dependency_idx_last_indexed_at ON dependency FIELDS last_indexed_at;
 "#;
 
 static MIGRATION_2025_10_22: &str = r#"

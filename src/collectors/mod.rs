@@ -37,13 +37,10 @@ pub async fn scan_directory(path: &str, ctx: &Arc<ProjectContext>) -> Result<()>
             let ctx = ctx.clone();
             let task = async move {
                 ctx.db
-                    .query(format!(
-                        "UPSERT INTO {DEPENDENCY_TABLE} (language, name, version) VALUES ($1, $2, $3)",
-                    ))
-                    .bind(dependency.language.to_string())
-                    .bind(dependency.name)
-                    .bind(dependency.version)
+                    .upsert(DEPENDENCY_TABLE)
+                    .content(dependency)
                     .await
+                    .map(|e: Vec<InsertDependency>| e.len())
             };
             upsert_tasks.push(task);
         }
