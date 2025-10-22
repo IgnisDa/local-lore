@@ -1,18 +1,21 @@
 use sea_orm_migration::prelude::*;
 
 use super::m20251021_create_dependency::Dependency;
+use super::m20251021_create_project::Project;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
 
 pub static FK_PROJECT_DEPENDENCY_DEPENDENCY: &str = "fk_project_dependency_dependency";
-pub static UNIQUE_INDEX_PATH_DEPENDENCY_ID: &str = "project_dependency_uq_idx_path_dependency_id";
+pub static FK_PROJECT_DEPENDENCY_PROJECT: &str = "fk_project_dependency_project";
+pub static UNIQUE_INDEX_PROJECT_DEPENDENCY_ID: &str =
+    "project_dependency_uq_idx_project_dependency_id";
 
 #[derive(Iden)]
 pub enum ProjectDependency {
     Table,
     Id,
-    Path,
+    ProjectId,
     LastSeenAt,
     FirstSeenAt,
     DependencyId,
@@ -33,11 +36,15 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(
+                        ColumnDef::new(ProjectDependency::ProjectId)
+                            .integer()
+                            .not_null(),
+                    )
+                    .col(
                         ColumnDef::new(ProjectDependency::DependencyId)
                             .integer()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(ProjectDependency::Path).text().not_null())
                     .col(
                         ColumnDef::new(ProjectDependency::FirstSeenAt)
                             .timestamp_with_time_zone()
@@ -49,6 +56,13 @@ impl MigrationTrait for Migration {
                             .timestamp_with_time_zone()
                             .not_null()
                             .default(Expr::current_timestamp()),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name(FK_PROJECT_DEPENDENCY_PROJECT)
+                            .from(ProjectDependency::Table, ProjectDependency::ProjectId)
+                            .to(Project::Table, Project::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
                         ForeignKey::create()
@@ -64,9 +78,9 @@ impl MigrationTrait for Migration {
         manager
             .create_index(
                 Index::create()
-                    .name(UNIQUE_INDEX_PATH_DEPENDENCY_ID)
+                    .name(UNIQUE_INDEX_PROJECT_DEPENDENCY_ID)
                     .table(ProjectDependency::Table)
-                    .col(ProjectDependency::Path)
+                    .col(ProjectDependency::ProjectId)
                     .col(ProjectDependency::DependencyId)
                     .unique()
                     .to_owned(),

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
 use anyhow::Result;
 use log::debug;
@@ -8,8 +8,8 @@ use crate::{
     context::LocalLoreContext,
     entities::{
         dependency,
-        prelude::{Dependency, ProjectDependency},
-        project_dependency,
+        prelude::{Dependency, Project, ProjectDependency},
+        project, project_dependency,
     },
     models::ProjectLanguage,
 };
@@ -35,6 +35,26 @@ impl CollectorDependency {
 }
 
 pub async fn gather_project_dependencies(path: &str, ctx: &Arc<LocalLoreContext>) -> Result<()> {
+    let project_name = Path::new(path)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or(path)
+        .to_string();
+
+    let new_project = project::ActiveModel {
+        name: Set(project_name),
+        path: Set(path.to_string()),
+        ..Default::default()
+    };
+    let project_record = Project::insert(new_project)
+        .on_conflict(
+            OnConflict::column(project::Column::Path)
+                .update_column(project::Column::LastSeenAt)
+                .to_owned(),
+        )
+        .exec_with_returning(&ctx.db)
+        .await?;
+
     let mut all_dependencies = Vec::new();
 
     let rust_deps = cargo_lock::collect_dependencies(path).await?;
@@ -71,14 +91,14 @@ pub async fn gather_project_dependencies(path: &str, ctx: &Arc<LocalLoreContext>
             .await?;
 
         let new_project_dep = project_dependency::ActiveModel {
-            path: Set(path.to_string()),
+            project_id: Set(project_record.id),
             dependency_id: Set(dependency_record.id),
             ..Default::default()
         };
         ProjectDependency::insert(new_project_dep)
             .on_conflict(
                 OnConflict::columns([
-                    project_dependency::Column::Path,
+                    project_dependency::Column::ProjectId,
                     project_dependency::Column::DependencyId,
                 ])
                 .update_column(project_dependency::Column::LastSeenAt)
