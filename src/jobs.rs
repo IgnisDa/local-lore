@@ -12,9 +12,6 @@ pub enum ApplicationJob {
     GatherProjectDependencies(String),
 }
 
-#[derive(Debug, Default)]
-pub struct ScheduledJob;
-
 pub async fn perform_application_job(
     job: ApplicationJob,
     ctx: Data<Arc<LocalLoreContext>>,
@@ -30,6 +27,9 @@ pub async fn perform_application_job(
         }
     }
 }
+
+#[derive(Debug, Default)]
+pub struct ScheduledJob;
 
 pub async fn perform_scheduled_job(
     _job: ScheduledJob,
