@@ -20,5 +20,5 @@ DEFINE FIELD OVERWRITE path ON project_dependency TYPE string;
 DEFINE FIELD OVERWRITE first_seen_at ON project_dependency TYPE datetime VALUE time::now() READONLY;
 DEFINE FIELD OVERWRITE last_seen_at ON project_dependency TYPE datetime VALUE time::now();
 
-DEFINE INDEX OVERWRITE project_dependency_idx_dependency_id ON project_dependency FIELDS dependency_id;
+DEFINE INDEX OVERWRITE project_dependency_uq_idx_path_dependency_id ON project_dependency FIELDS path, dependency_id UNIQUE;
 "#;
