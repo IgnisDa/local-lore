@@ -5,7 +5,7 @@ use apalis_cron::CronContext;
 use log::debug;
 use serde::{Deserialize, Serialize};
 
-use crate::{collectors::gather_project_dependencies, context::ProjectContext};
+use crate::{collectors::gather_project_dependencies, context::LocalLoreContext};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum ApplicationJob {
@@ -17,7 +17,7 @@ pub struct ScheduledJob;
 
 pub async fn perform_application_job(
     job: ApplicationJob,
-    ctx: Data<Arc<ProjectContext>>,
+    ctx: Data<Arc<LocalLoreContext>>,
 ) -> Result<(), Error> {
     debug!("Processing job: {:?}", job);
 
@@ -34,7 +34,7 @@ pub async fn perform_application_job(
 pub async fn perform_scheduled_job(
     _job: ScheduledJob,
     cron_ctx: CronContext<chrono_tz::Tz>,
-    _ctx: Data<Arc<ProjectContext>>,
+    _ctx: Data<Arc<LocalLoreContext>>,
 ) -> Result<(), Error> {
     debug!(
         "Running scheduled job at {:#?} (context available)",

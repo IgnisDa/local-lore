@@ -17,7 +17,7 @@ use sea_orm_migration::MigratorTrait;
 use tokio::try_join;
 use turbomcp::prelude::*;
 
-use crate::{context::ProjectContext, migrator::Migrator};
+use crate::{context::LocalLoreContext, migrator::Migrator};
 
 mod collectors;
 mod context;
@@ -29,12 +29,12 @@ mod models;
 
 #[derive(Clone)]
 struct LocalLoreServer {
-    ctx: Arc<ProjectContext>,
+    ctx: Arc<LocalLoreContext>,
 }
 
 #[server(name = "Local Lore", version = "0.1.0")]
 impl LocalLoreServer {
-    fn new(ctx: Arc<ProjectContext>) -> Self {
+    fn new(ctx: Arc<LocalLoreContext>) -> Self {
         Self { ctx }
     }
 }
@@ -56,7 +56,7 @@ async fn main() -> Result<()> {
     let db = setup_database().await?;
     run_migrations(&db).await?;
 
-    let project_context = Arc::new(ProjectContext::new(db));
+    let project_context = Arc::new(LocalLoreContext::new(db));
 
     let mut application_job_storage = MemoryStorage::new();
 

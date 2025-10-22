@@ -1,10 +1,10 @@
 use sea_orm::DatabaseConnection;
 
-pub struct ProjectContext {
+pub struct LocalLoreContext {
     pub db: DatabaseConnection,
 }
 
-impl ProjectContext {
+impl LocalLoreContext {
     pub fn new(db: DatabaseConnection) -> Self {
         Self { db }
     }

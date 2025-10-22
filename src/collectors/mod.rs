@@ -5,7 +5,7 @@ use log::debug;
 use sea_orm::{EntityTrait, Set, sea_query::OnConflict};
 
 use crate::{
-    context::ProjectContext,
+    context::LocalLoreContext,
     entities::{
         dependency,
         prelude::{Dependency, ProjectDependency},
@@ -34,7 +34,7 @@ impl CollectorDependency {
     }
 }
 
-pub async fn gather_project_dependencies(path: &str, ctx: &Arc<ProjectContext>) -> Result<()> {
+pub async fn gather_project_dependencies(path: &str, ctx: &Arc<LocalLoreContext>) -> Result<()> {
     let mut all_dependencies = Vec::new();
 
     let rust_deps = cargo_lock::collect_dependencies(path).await?;
