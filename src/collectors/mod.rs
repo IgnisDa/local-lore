@@ -5,7 +5,7 @@ use log::debug;
 use sea_orm::{EntityTrait, Set, sea_query::OnConflict};
 
 use crate::{
-    context::LocalLoreContext,
+    LocalLoreContext,
     entities::{
         dependency,
         prelude::{Dependency, Project, ProjectDependency},

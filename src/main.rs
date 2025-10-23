@@ -17,24 +17,31 @@ use sea_orm_migration::MigratorTrait;
 use tokio::try_join;
 use turbomcp::prelude::*;
 
-use crate::{context::LocalLoreContext, migrator::Migrator};
+use crate::migrator::Migrator;
 
 mod collectors;
-mod context;
 mod entities;
 mod jobs;
 mod migrator;
 mod models;
 
-#[derive(Clone)]
-struct LocalLoreServer {
-    ctx: Arc<LocalLoreContext>,
+struct LocalLoreContext {
+    pub db: DatabaseConnection,
 }
+
+impl LocalLoreContext {
+    pub fn new(db: DatabaseConnection) -> Self {
+        Self { db }
+    }
+}
+
+#[derive(Clone)]
+struct LocalLoreServer(Arc<LocalLoreContext>);
 
 #[server(name = "Local Lore", version = "0.1.0", transports = ["stdio"])]
 impl LocalLoreServer {
     fn new(ctx: Arc<LocalLoreContext>) -> Self {
-        Self { ctx }
+        Self(ctx)
     }
 }
 
