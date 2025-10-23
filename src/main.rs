@@ -32,7 +32,7 @@ struct LocalLoreServer {
     ctx: Arc<LocalLoreContext>,
 }
 
-#[server(name = "Local Lore", version = "0.1.0")]
+#[server(name = "Local Lore", version = "0.1.0", transports = ["stdio"])]
 impl LocalLoreServer {
     fn new(ctx: Arc<LocalLoreContext>) -> Self {
         Self { ctx }
