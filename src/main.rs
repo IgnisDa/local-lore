@@ -23,7 +23,6 @@ mod collectors;
 mod context;
 mod entities;
 mod jobs;
-mod mcp;
 mod migrator;
 mod models;
 
